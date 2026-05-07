@@ -1,4 +1,4 @@
-import type { Span } from '../schemas/validation-schemas.js';
+import type { Span } from '../schemas/validation-schemas';
 
 export interface AgentRun {
   id: string;

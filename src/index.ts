@@ -3,10 +3,10 @@ import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
-import { env } from './config/env.js';
-import { agentsRouter, runsRouter, incidentsRouter, dashboardRouter } from './routes/agents.js';
-import { ingestRouter, evaluateRouter } from './routes/evaluate.js';
-import { openApiSpec } from './docs/swagger.js';
+import { env } from './config/env';
+import { agentsRouter, runsRouter, incidentsRouter, dashboardRouter } from './routes/agents';
+import { ingestRouter, evaluateRouter } from './routes/evaluate';
+import { openApiSpec } from './docs/swagger';
 
 export const app = express();
 const startedAt = Date.now();

@@ -1,7 +1,7 @@
-import { env } from '../config/env.js';
-import { baselines, runs } from '../data/runs.js';
-import { findAgent } from '../data/agents.js';
-import type { RegressionEvaluationPayload, Span } from '../schemas/validation-schemas.js';
+import { env } from '../config/env';
+import { baselines, runs } from '../data/runs';
+import { findAgent } from '../data/agents';
+import type { RegressionEvaluationPayload, Span } from '../schemas/validation-schemas';
 
 export interface RegressionResult {
   agentId: string;

@@ -4,11 +4,11 @@ import {
   RegressionEvaluationSchema,
   CostAnomalyEvaluationSchema,
   SlaEvaluationSchema,
-} from '../schemas/validation-schemas.js';
-import { evaluateCostAnomaly } from '../governance/cost-anomaly.js';
-import { evaluateRunRegression } from '../governance/regression-detector.js';
-import { evaluateSla } from '../governance/sla-evaluator.js';
-import { auditRun } from '../governance/run-audit.js';
+} from '../schemas/validation-schemas';
+import { evaluateCostAnomaly } from '../governance/cost-anomaly';
+import { evaluateRunRegression } from '../governance/regression-detector';
+import { evaluateSla } from '../governance/sla-evaluator';
+import { auditRun } from '../governance/run-audit';
 
 export const ingestRouter = Router();
 ingestRouter.post('/run', (req, res) => {

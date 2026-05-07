@@ -1,7 +1,7 @@
-import { env } from '../config/env.js';
-import { baselines } from '../data/runs.js';
-import { findAgent } from '../data/agents.js';
-import type { CostAnomalyEvaluationPayload } from '../schemas/validation-schemas.js';
+import { env } from '../config/env';
+import { baselines } from '../data/runs';
+import { findAgent } from '../data/agents';
+import type { CostAnomalyEvaluationPayload } from '../schemas/validation-schemas';
 
 export interface CostAnomalyResult {
   agentId: string;

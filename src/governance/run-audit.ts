@@ -1,6 +1,6 @@
-import { runs } from '../data/runs.js';
-import { evaluateRunRegression } from './regression-detector.js';
-import { evaluateCostAnomaly } from './cost-anomaly.js';
+import { runs } from '../data/runs';
+import { evaluateRunRegression } from './regression-detector';
+import { evaluateCostAnomaly } from './cost-anomaly';
 
 export interface RunAuditResult {
   runId: string;

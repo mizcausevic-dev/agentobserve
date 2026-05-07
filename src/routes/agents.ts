@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { agents, findAgent } from '../data/agents.js';
-import { runs, incidents, baselines } from '../data/runs.js';
+import { agents, findAgent } from '../data/agents';
+import { runs, incidents, baselines } from '../data/runs';
 
 export const agentsRouter = Router();
 agentsRouter.get('/', (_req, res) => {

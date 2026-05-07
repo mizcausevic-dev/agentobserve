@@ -1,5 +1,5 @@
-import { findAgent } from '../data/agents.js';
-import type { SlaEvaluationPayload } from '../schemas/validation-schemas.js';
+import { findAgent } from '../data/agents';
+import type { SlaEvaluationPayload } from '../schemas/validation-schemas';
 
 export interface SlaEvaluationResult {
   agentId: string;
