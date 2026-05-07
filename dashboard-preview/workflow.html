@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>AgentObserve — Run Trace</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0B0C10;
+  --panel: #1F2833;
+  --panel-2: #161B22;
+  --text: #C5C6C7;
+  --text-dim: #8b8d8f;
+  --accent: #66FCF1;
+  --accent-dark: #45A29E;
+  --danger: #ff5c7a;
+  --warn: #ffb347;
+  --ok: #4ade80;
+  --border: #2a3441;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Space Grotesk', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: var(--sans);
+  padding: 28px 36px;
+  min-height: 100vh; font-size: 14px;
+}
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 24px; padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.brand { display: flex; align-items: center; gap: 14px; }
+.logo {
+  width: 38px; height: 38px;
+  border: 2px solid var(--accent); border-radius: 8px;
+  display: grid; place-items: center;
+  font-family: var(--mono); font-weight: 700;
+  color: var(--accent); font-size: 18px;
+}
+.brand h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+.brand .tag {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--text-dim); letter-spacing: 1.2px; text-transform: uppercase;
+}
+.topbar-right {
+  display: flex; align-items: center; gap: 24px;
+  font-family: var(--mono); font-size: 12px;
+}
+.status-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 92, 122, 0.12);
+  border: 1px solid rgba(255, 92, 122, 0.3);
+  color: var(--danger);
+  border-radius: 999px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+}
+.status-pill .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--danger); box-shadow: 0 0 8px var(--danger);
+}
+
+.flow {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 8px; margin-bottom: 22px;
+}
+.flow-step {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px 16px;
+  position: relative;
+}
+.flow-step::after {
+  content: '→'; position: absolute;
+  right: -16px; top: 50%; transform: translateY(-50%);
+  color: var(--accent); font-family: var(--mono);
+  font-size: 16px; z-index: 2;
+}
+.flow-step:last-child::after { content: ''; }
+.flow-step .num {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--accent); letter-spacing: 1.5px; margin-bottom: 6px;
+}
+.flow-step .title {
+  font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px;
+}
+.flow-step .sub {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text-dim); letter-spacing: 0.3px;
+}
+.flow-step.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 18px rgba(102, 252, 241, 0.18);
+}
+.flow-step.alert {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 1px var(--danger), 0 0 18px rgba(255, 92, 122, 0.22);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+.panel h2 {
+  font-size: 12px; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent);
+  font-family: var(--mono); font-weight: 500;
+  margin-bottom: 14px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.panel h2 .count { color: var(--text-dim); font-weight: 400; }
+
+.run-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 12px;
+  font-family: var(--mono); font-size: 12px;
+}
+.run-card:last-child { margin-bottom: 0; }
+.run-card.blocked { border-color: rgba(255, 92, 122, 0.4); background: rgba(255, 92, 122, 0.04); }
+.run-card.flagged { border-color: rgba(255, 179, 71, 0.4); background: rgba(255, 179, 71, 0.04); }
+.run-card.allowed { border-color: rgba(74, 222, 128, 0.3); background: rgba(74, 222, 128, 0.03); }
+
+.run-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.run-name {
+  color: var(--accent); font-weight: 500; font-size: 13px;
+}
+.run-name small {
+  color: var(--text-dim); font-weight: 400; margin-left: 6px;
+}
+.run-status {
+  font-size: 10px; padding: 2px 8px;
+  border-radius: 4px; letter-spacing: 1px;
+  text-transform: uppercase; font-weight: 500;
+}
+.run-status.blocked { background: rgba(255, 92, 122, 0.15); color: var(--danger); }
+.run-status.flagged { background: rgba(255, 179, 71, 0.15); color: var(--warn); }
+.run-status.allowed { background: rgba(74, 222, 128, 0.15); color: var(--ok); }
+
+.run-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px; margin-bottom: 8px;
+  font-size: 11px;
+}
+.run-stats .k {
+  color: var(--text-dim); font-size: 9px;
+  letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px;
+}
+.run-stats .v { color: var(--text); font-weight: 500; }
+.run-stats .v.bad { color: var(--danger); }
+.run-stats .v.warn { color: var(--warn); }
+.run-stats .v.good { color: var(--ok); }
+
+.run-tags {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  margin-top: 6px;
+}
+.tag {
+  font-size: 9px; padding: 3px 7px;
+  border-radius: 3px; letter-spacing: 0.5px;
+  background: rgba(255, 92, 122, 0.1); color: var(--danger);
+  border: 1px solid rgba(255, 92, 122, 0.25);
+}
+.tag.pii { background: rgba(255, 179, 71, 0.1); color: var(--warn); border-color: rgba(255, 179, 71, 0.25); }
+.tag.ok { background: rgba(74, 222, 128, 0.1); color: var(--ok); border-color: rgba(74, 222, 128, 0.25); }
+
+.budget-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 10px;
+  font-family: var(--mono); font-size: 12px;
+}
+.budget-card:last-child { margin-bottom: 0; }
+.budget-card.alert { border-color: rgba(255, 92, 122, 0.4); background: rgba(255, 92, 122, 0.04); }
+.budget-card.warn { border-color: rgba(255, 179, 71, 0.3); background: rgba(255, 179, 71, 0.03); }
+
+.budget-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.budget-name { color: var(--accent); font-size: 13px; font-weight: 500; }
+.budget-pct { font-family: var(--mono); font-size: 14px; font-weight: 600; }
+
+.budget-bar {
+  height: 8px; background: rgba(197, 198, 199, 0.1);
+  border-radius: 4px; overflow: hidden;
+  margin-bottom: 6px;
+}
+.budget-bar .fill { height: 100%; border-radius: 4px; }
+
+.budget-meta {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: var(--text-dim);
+  letter-spacing: 0.5px;
+}
+
+.regression-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 12px; align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(42, 52, 65, 0.5);
+  font-size: 12px;
+}
+.regression-row:last-child { border-bottom: none; }
+.regression-row .agent { color: var(--text); font-weight: 500; }
+.regression-row .agent small {
+  display: block; font-family: var(--mono);
+  color: var(--text-dim); font-size: 10px; margin-top: 2px;
+}
+.regression-row .metric {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--text-dim); text-align: right;
+}
+.regression-row .metric strong {
+  display: block; font-size: 14px;
+  color: var(--text); font-weight: 600;
+}
+.regression-row .metric.bad strong { color: var(--danger); }
+.regression-row .metric.warn strong { color: var(--warn); }
+.regression-row .metric.ok strong { color: var(--ok); }
+
+.footer-row {
+  margin-top: 20px;
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 14px; border-top: 1px solid var(--border);
+  font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div>
+      <h1>AgentObserve</h1>
+      <div class="tag">RUN STREAM · LIVE EVALUATION</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="status-pill"><span class="dot"></span>1 RUN BLOCKED · LAST 5M</span>
+    <span style="color: var(--text-dim);">stream: agent-runs</span>
+    <span style="color: var(--accent);">v0.1.0</span>
+  </div>
+</div>
+
+<div class="flow">
+  <div class="flow-step">
+    <div class="num">01</div>
+    <div class="title">Run ingested</div>
+    <div class="sub">spans · model · tools</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">02</div>
+    <div class="title">Cost evaluation</div>
+    <div class="sub">vs baseline · vs budget</div>
+  </div>
+  <div class="flow-step active">
+    <div class="num">03</div>
+    <div class="title">Regression scan</div>
+    <div class="sub">latency · drift · loops</div>
+  </div>
+  <div class="flow-step alert">
+    <div class="num">04</div>
+    <div class="title">SLA scoring</div>
+    <div class="sub">error budget · compliance</div>
+  </div>
+  <div class="flow-step">
+    <div class="num">05</div>
+    <div class="title">Decision + audit</div>
+    <div class="sub">allow · flag · block</div>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="panel">
+    <h2>Live Runs <span class="count">streaming · 5 most recent</span></h2>
+
+    <div class="run-card blocked">
+      <div class="run-head">
+        <div class="run-name">data-analyst <small>run_8a91fe</small></div>
+        <div class="run-status blocked">blocked</div>
+      </div>
+      <div class="run-stats">
+        <div><div class="k">Latency</div><div class="v bad">28.4s ↑4.2x</div></div>
+        <div><div class="k">Cost</div><div class="v bad">$1.42 ↑4.2x</div></div>
+        <div><div class="k">Tool Calls</div><div class="v warn">11</div></div>
+        <div><div class="k">Retries</div><div class="v warn">3</div></div>
+      </div>
+      <div class="run-tags">
+        <span class="tag">cost-anomaly</span>
+        <span class="tag">latency-regression</span>
+        <span class="tag">retry-excess</span>
+        <span class="tag">budget-breach</span>
+      </div>
+    </div>
+
+    <div class="run-card flagged">
+      <div class="run-head">
+        <div class="run-name">code-review <small>run_c2d1fa</small></div>
+        <div class="run-status flagged">flagged</div>
+      </div>
+      <div class="run-stats">
+        <div><div class="k">Latency</div><div class="v warn">14.2s ↑1.4x</div></div>
+        <div><div class="k">Cost</div><div class="v warn">$0.34 ↑1.6x</div></div>
+        <div><div class="k">Tool Calls</div><div class="v">6</div></div>
+        <div><div class="k">Retries</div><div class="v">1</div></div>
+      </div>
+      <div class="run-tags">
+        <span class="tag pii">latency-regression</span>
+        <span class="tag pii">sla-watch</span>
+      </div>
+    </div>
+
+    <div class="run-card allowed">
+      <div class="run-head">
+        <div class="run-name">support-triage <small>run_b40ace</small></div>
+        <div class="run-status allowed">allowed</div>
+      </div>
+      <div class="run-stats">
+        <div><div class="k">Latency</div><div class="v good">2.81s</div></div>
+        <div><div class="k">Cost</div><div class="v good">$0.0042</div></div>
+        <div><div class="k">Tool Calls</div><div class="v">2</div></div>
+        <div><div class="k">Retries</div><div class="v good">0</div></div>
+      </div>
+      <div class="run-tags">
+        <span class="tag ok">healthy</span>
+        <span class="tag ok">within-baseline</span>
+      </div>
+    </div>
+
+    <div class="run-card allowed">
+      <div class="run-head">
+        <div class="run-name">sales-outreach <small>run_e9b822</small></div>
+        <div class="run-status allowed">allowed</div>
+      </div>
+      <div class="run-stats">
+        <div><div class="k">Latency</div><div class="v good">5.10s</div></div>
+        <div><div class="k">Cost</div><div class="v good">$0.067</div></div>
+        <div><div class="k">Tool Calls</div><div class="v">3</div></div>
+        <div><div class="k">Retries</div><div class="v good">0</div></div>
+      </div>
+      <div class="run-tags">
+        <span class="tag ok">healthy</span>
+      </div>
+    </div>
+
+    <div class="run-card allowed">
+      <div class="run-head">
+        <div class="run-name">invoice-processor <small>run_f12d44</small></div>
+        <div class="run-status allowed">allowed</div>
+      </div>
+      <div class="run-stats">
+        <div><div class="k">Latency</div><div class="v good">4.08s</div></div>
+        <div><div class="k">Cost</div><div class="v good">$0.0058</div></div>
+        <div><div class="k">Tool Calls</div><div class="v">3</div></div>
+        <div><div class="k">Retries</div><div class="v good">0</div></div>
+      </div>
+      <div class="run-tags">
+        <span class="tag ok">healthy</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Cost Budgets <span class="count">1 breach · 1 warn</span></h2>
+
+    <div class="budget-card alert">
+      <div class="budget-head">
+        <div class="budget-name">data-analyst</div>
+        <div class="budget-pct" style="color: var(--danger);">321%</div>
+      </div>
+      <div class="budget-bar">
+        <div class="fill" style="width:100%; background: var(--danger);"></div>
+      </div>
+      <div class="budget-meta">
+        <span>$1,284.10 spent</span>
+        <span>$400 budget · BREACH</span>
+      </div>
+    </div>
+
+    <div class="budget-card warn">
+      <div class="budget-head">
+        <div class="budget-name">code-review</div>
+        <div class="budget-pct" style="color: var(--warn);">97%</div>
+      </div>
+      <div class="budget-bar">
+        <div class="fill" style="width:97%; background: var(--warn);"></div>
+      </div>
+      <div class="budget-meta">
+        <span>$581.42 spent</span>
+        <span>$600 budget · WARN</span>
+      </div>
+    </div>
+
+    <div class="budget-card">
+      <div class="budget-head">
+        <div class="budget-name">research-agent</div>
+        <div class="budget-pct" style="color: var(--ok);">72%</div>
+      </div>
+      <div class="budget-bar">
+        <div class="fill" style="width:72%; background: var(--ok);"></div>
+      </div>
+      <div class="budget-meta">
+        <span>$1,448.18 spent</span>
+        <span>$2,000 budget · healthy</span>
+      </div>
+    </div>
+
+    <h2 style="margin-top: 22px;">Regression Watch <span class="count">vs 7d baseline</span></h2>
+    <div class="regression-row">
+      <div class="agent">data-analyst<small>run_8a91fe</small></div>
+      <div class="metric bad"><strong>4.2x</strong>latency</div>
+      <div class="metric bad"><strong>4.2x</strong>cost</div>
+      <div class="metric bad"><strong>0.31</strong>drift</div>
+    </div>
+    <div class="regression-row">
+      <div class="agent">code-review<small>run_c2d1fa</small></div>
+      <div class="metric warn"><strong>1.4x</strong>latency</div>
+      <div class="metric warn"><strong>1.6x</strong>cost</div>
+      <div class="metric ok"><strong>0.08</strong>drift</div>
+    </div>
+    <div class="regression-row">
+      <div class="agent">research-agent<small>run_g78c10</small></div>
+      <div class="metric ok"><strong>1.0x</strong>latency</div>
+      <div class="metric ok"><strong>0.9x</strong>cost</div>
+      <div class="metric ok"><strong>0.04</strong>drift</div>
+    </div>
+    <div class="regression-row">
+      <div class="agent">support-triage<small>rolling 100</small></div>
+      <div class="metric ok"><strong>0.95x</strong>latency</div>
+      <div class="metric ok"><strong>1.0x</strong>cost</div>
+      <div class="metric ok"><strong>0.02</strong>drift</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer-row">
+  <span>POST /api/evaluate/regression · POST /api/evaluate/cost-anomaly</span>
+  <span>throughput 4.8k runs/min · p95 eval latency 18ms</span>
+</div>
+
+</body>
+</html>

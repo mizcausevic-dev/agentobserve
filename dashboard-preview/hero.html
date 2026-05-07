@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>AgentObserve — Fleet Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0B0C10;
+  --panel: #1F2833;
+  --panel-2: #161B22;
+  --text: #C5C6C7;
+  --text-dim: #8b8d8f;
+  --accent: #66FCF1;
+  --accent-dark: #45A29E;
+  --danger: #ff5c7a;
+  --warn: #ffb347;
+  --ok: #4ade80;
+  --border: #2a3441;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Space Grotesk', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  padding: 28px 36px;
+  min-height: 100vh;
+  font-size: 14px;
+}
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 24px; padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.brand { display: flex; align-items: center; gap: 14px; }
+.logo {
+  width: 38px; height: 38px;
+  border: 2px solid var(--accent); border-radius: 8px;
+  display: grid; place-items: center;
+  font-family: var(--mono); font-weight: 700;
+  color: var(--accent); font-size: 18px;
+}
+.brand h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+.brand .tag {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--text-dim); letter-spacing: 1.2px; text-transform: uppercase;
+}
+.topbar-right {
+  display: flex; align-items: center; gap: 24px;
+  font-family: var(--mono); font-size: 12px;
+}
+.status-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 92, 122, 0.12);
+  border: 1px solid rgba(255, 92, 122, 0.3);
+  color: var(--danger);
+  border-radius: 999px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+}
+.status-pill .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--danger); box-shadow: 0 0 8px var(--danger);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.kpi {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.kpi::before {
+  content: ''; position: absolute;
+  top: 0; left: 0;
+  width: 4px; height: 100%;
+  background: var(--accent);
+}
+.kpi.danger::before { background: var(--danger); }
+.kpi.warn::before { background: var(--warn); }
+.kpi.ok::before { background: var(--ok); }
+.kpi .label {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text-dim); letter-spacing: 1.5px;
+  text-transform: uppercase; margin-bottom: 8px;
+}
+.kpi .value {
+  font-family: var(--mono); font-size: 28px;
+  font-weight: 700; color: var(--text); line-height: 1;
+}
+.kpi.danger .value { color: var(--danger); }
+.kpi.warn .value { color: var(--warn); }
+.kpi.ok .value { color: var(--ok); }
+.kpi.accent .value { color: var(--accent); }
+.kpi .delta {
+  font-family: var(--mono); font-size: 11px;
+  margin-top: 8px; color: var(--text-dim);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 18px;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+.panel h2 {
+  font-size: 12px; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--accent);
+  font-family: var(--mono); font-weight: 500;
+  margin-bottom: 14px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.panel h2 .count { color: var(--text-dim); font-weight: 400; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text-dim); letter-spacing: 1px;
+  text-transform: uppercase; text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 500;
+}
+td {
+  padding: 10px;
+  border-bottom: 1px solid rgba(42, 52, 65, 0.5);
+  font-family: var(--mono); font-size: 12px;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(102, 252, 241, 0.03); }
+
+.agent-name {
+  font-family: var(--sans); font-weight: 500;
+  font-size: 13px; color: var(--text);
+}
+.agent-id {
+  font-size: 10px; color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px; border-radius: 4px;
+  font-family: var(--mono); font-size: 10px;
+  font-weight: 500; letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.badge.healthy { background: rgba(74, 222, 128, 0.12); color: var(--ok); }
+.badge.degraded { background: rgba(255, 179, 71, 0.12); color: var(--warn); }
+.badge.quarantined { background: rgba(255, 92, 122, 0.12); color: var(--danger); }
+.badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.posture-bar {
+  display: flex; align-items: center; gap: 8px;
+}
+.posture-bar .track {
+  width: 60px; height: 5px;
+  background: rgba(197, 198, 199, 0.1);
+  border-radius: 3px; overflow: hidden;
+}
+.posture-bar .fill { height: 100%; border-radius: 3px; }
+.posture-bar .num {
+  font-family: var(--mono); font-size: 12px; font-weight: 500;
+}
+
+.cost-cell {
+  font-family: var(--mono); font-size: 12px;
+}
+.cost-cell .delta {
+  font-size: 10px; color: var(--text-dim); margin-top: 2px;
+}
+.cost-cell .delta.up { color: var(--danger); }
+.cost-cell .delta.down { color: var(--ok); }
+
+.incident-row {
+  display: flex; gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(42, 52, 65, 0.5);
+}
+.incident-row:last-child { border-bottom: none; }
+.incident-row .sev { width: 6px; border-radius: 3px; flex-shrink: 0; }
+.incident-row.critical .sev { background: var(--danger); }
+.incident-row.high .sev { background: #ff8c5e; }
+.incident-row.medium .sev { background: var(--warn); }
+.incident-body { flex: 1; min-width: 0; }
+.incident-title {
+  font-size: 13px; font-weight: 500;
+  color: var(--text); margin-bottom: 4px;
+}
+.incident-meta {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text-dim); letter-spacing: 0.5px;
+}
+.incident-meta .pipe { color: var(--border); margin: 0 6px; }
+
+.spend-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(42, 52, 65, 0.5);
+}
+.spend-row:last-child { border-bottom: none; }
+.spend-row .agent {
+  font-family: var(--mono); font-size: 12px; color: var(--text);
+}
+.spend-row .agent small {
+  display: block; color: var(--text-dim);
+  font-size: 10px; margin-top: 2px;
+}
+.spend-row .pct-bar {
+  display: flex; align-items: center; gap: 8px;
+}
+.spend-row .pct-bar .track {
+  width: 80px; height: 4px;
+  background: rgba(197, 198, 199, 0.1);
+  border-radius: 2px; overflow: hidden;
+}
+.spend-row .pct-bar .fill { height: 100%; }
+.spend-row .pct-bar .pct {
+  font-family: var(--mono); font-size: 11px; font-weight: 500; min-width: 38px; text-align: right;
+}
+
+.spark {
+  display: flex; align-items: flex-end;
+  gap: 2px; height: 22px; margin-top: 12px;
+}
+.spark .bar {
+  flex: 1; background: var(--accent-dark);
+  border-radius: 1px; min-height: 2px; opacity: 0.7;
+}
+.spark .bar.peak { background: var(--accent); opacity: 1; }
+.spark .bar.alert { background: var(--danger); opacity: 1; }
+
+.footer-row {
+  margin-top: 20px;
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 14px; border-top: 1px solid var(--border);
+  font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">
+    <div class="logo">A</div>
+    <div>
+      <h1>AgentObserve</h1>
+      <div class="tag">FLEET OVERVIEW · OPS CONSOLE</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="status-pill"><span class="dot"></span>2 INCIDENTS OPEN · 1 BUDGET BREACH</span>
+    <span style="color: var(--text-dim);">poll: 30s</span>
+    <span style="color: var(--accent);">v0.1.0</span>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi accent">
+    <div class="label">Active Agents</div>
+    <div class="value">8</div>
+    <div class="delta">5 healthy · 2 degraded · 1 quarantined</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Runs · 24h</div>
+    <div class="value">7,264</div>
+    <div class="delta">↑ 4.2% vs yesterday</div>
+  </div>
+  <div class="kpi warn">
+    <div class="label">Cost · 24h</div>
+    <div class="value">$278</div>
+    <div class="delta">↑ 38% — anomaly on data-analyst</div>
+  </div>
+  <div class="kpi danger">
+    <div class="label">Fleet P95</div>
+    <div class="value">28.4s</div>
+    <div class="delta">data-analyst regression</div>
+  </div>
+  <div class="kpi ok">
+    <div class="label">SLA Compliance</div>
+    <div class="value">93%</div>
+    <div class="delta">3 of 8 below target</div>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="panel">
+    <h2>Agent Fleet <span class="count">8 agents</span></h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Agent</th>
+          <th>Env</th>
+          <th>Model</th>
+          <th>Runs 24h</th>
+          <th>Cost/Run</th>
+          <th>P95</th>
+          <th>SLA</th>
+          <th>Posture</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div class="agent-name">support-triage</div>
+            <div class="agent-id">cx-platform · prod</div>
+          </td>
+          <td>prod</td>
+          <td>sonnet-4-6</td>
+          <td>4,218</td>
+          <td class="cost-cell">$0.0044<div class="delta">$18.42 24h</div></td>
+          <td>2.84s</td>
+          <td><span class="badge healthy"><span class="dot"></span>99.8%</span></td>
+          <td><div class="posture-bar"><div class="track"><div class="fill" style="width:92%; background: var(--ok);"></div></div><span class="num">92</span></div></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="agent-name">invoice-processor</div>
+            <div class="agent-id">finops · prod</div>
+          </td>
+          <td>prod</td>
+          <td>sonnet-4-6</td>
+          <td>1,942</td>
+          <td class="cost-cell">$0.0062<div class="delta">$12.10 24h</div></td>
+          <td>4.18s</td>
+          <td><span class="badge healthy"><span class="dot"></span>99.1%</span></td>
+          <td><div class="posture-bar"><div class="track"><div class="fill" style="width:88%; background: var(--ok);"></div></div><span class="num">88</span></div></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="agent-name">research-agent</div>
+            <div class="agent-id">strategy · prod</div>
+          </td>
+          <td>prod</td>
+          <td>opus-4-7</td>
+          <td>142</td>
+          <td class="cost-cell">$0.4732<div class="delta">$67.20 24h</div></td>
+          <td>18.4s</td>
+          <td><span class="badge healthy"><span class="dot"></span>96.1%</span></td>
+          <td><div class="posture-bar"><div class="track"><div class="fill" style="width:86%; background: var(--ok);"></div></div><span class="num">86</span></div></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="agent-name">sales-outreach</div>
+            <div class="agent-id">revops · prod</div>
+          </td>
+          <td>prod</td>
+          <td>opus-4-7</td>
+          <td>612</td>
+          <td class="cost-cell">$0.0684<div class="delta">$41.88 24h</div></td>
+          <td>6.42s</td>
+          <td><span class="badge healthy"><span class="dot"></span>98.4%</span></td>
+          <td><div class="posture-bar"><div class="track"><div class="fill" style="width:84%; background: var(--ok);"></div></div><span class="num">84</span></div></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="agent-name">doc-writer</div>
+            <div class="agent-id">platform-eng · staging</div>
+          </td>
+          <td>stg</td>
+          <td>sonnet-4-6</td>
+          <td>47</td>
+          <td class="cost-cell">$0.0896<div class="delta">$4.21 24h</div></td>
+          <td>7.20s</td>
+          <td><span class="badge healthy"><span class="dot"></span>97.8%</span></td>
+          <td><div class="posture-bar"><div class="track"><div class="fill" style="width:81%; background: var(--ok);"></div></div><span class="num">81</span></div></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="agent-name">on-call-summarizer</div>
+            <div class="agent-id">sre · staging</div>
+          </td>
+          <td>stg</td>
+          <td>sonnet-4-6</td>
+          <td>31</td>
+          <td class="cost-cell">$0.0916<div class="delta">$2.84 24h</div></td>
+          <td>9.10s</td>
+          <td><span class="badge degraded"><span class="dot"></span>84.2%</span></td>
+          <td><div class="posture-bar"><div class="track"><div class="fill" style="width:72%; background: var(--warn);"></div></div><span class="num">72</span></div></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="agent-name">code-review</div>
+            <div class="agent-id">devx · prod</div>
+          </td>
+          <td>prod</td>
+          <td>opus-4-7</td>
+          <td>184</td>
+          <td class="cost-cell">$0.2104<div class="delta up">↑ 52% vs P95</div></td>
+          <td>12.3s</td>
+          <td><span class="badge degraded"><span class="dot"></span>87.2%</span></td>
+          <td><div class="posture-bar"><div class="track"><div class="fill" style="width:67%; background: var(--warn);"></div></div><span class="num">67</span></div></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="agent-name">data-analyst</div>
+            <div class="agent-id">data-platform · prod</div>
+          </td>
+          <td>prod</td>
+          <td>opus-4-7</td>
+          <td>88</td>
+          <td class="cost-cell">$1.0500<div class="delta up">↑ 4.2x baseline</div></td>
+          <td>28.4s</td>
+          <td><span class="badge quarantined"><span class="dot"></span>61.1%</span></td>
+          <td><div class="posture-bar"><div class="track"><div class="fill" style="width:48%; background: var(--danger);"></div></div><span class="num">48</span></div></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="spark">
+      <div class="bar" style="height: 28%"></div>
+      <div class="bar" style="height: 32%"></div>
+      <div class="bar" style="height: 35%"></div>
+      <div class="bar" style="height: 30%"></div>
+      <div class="bar" style="height: 38%"></div>
+      <div class="bar" style="height: 42%"></div>
+      <div class="bar" style="height: 45%"></div>
+      <div class="bar" style="height: 50%"></div>
+      <div class="bar peak" style="height: 58%"></div>
+      <div class="bar" style="height: 48%"></div>
+      <div class="bar" style="height: 52%"></div>
+      <div class="bar peak" style="height: 65%"></div>
+      <div class="bar" style="height: 60%"></div>
+      <div class="bar" style="height: 55%"></div>
+      <div class="bar" style="height: 58%"></div>
+      <div class="bar alert" style="height: 92%"></div>
+      <div class="bar alert" style="height: 96%"></div>
+      <div class="bar alert" style="height: 88%"></div>
+      <div class="bar alert" style="height: 94%"></div>
+      <div class="bar" style="height: 70%"></div>
+      <div class="bar" style="height: 65%"></div>
+      <div class="bar peak" style="height: 72%"></div>
+      <div class="bar" style="height: 68%"></div>
+      <div class="bar" style="height: 62%"></div>
+    </div>
+    <div style="font-family: var(--mono); font-size: 10px; color: var(--text-dim); margin-top: 4px; display: flex; justify-content: space-between;">
+      <span>fleet cost · last 24h · USD/hour</span>
+      <span>peak $34.20/hr · spike from data-analyst regression</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Active Incidents <span class="count">3 open</span></h2>
+    <div class="incident-row critical">
+      <div class="sev"></div>
+      <div class="incident-body">
+        <div class="incident-title">Cost budget exceeded — agent at 321% of monthly budget</div>
+        <div class="incident-meta">
+          <span style="color: var(--danger); font-weight: 500;">CRITICAL</span>
+          <span class="pipe">|</span>
+          agt_data_analyst
+          <span class="pipe">|</span>
+          cost-budget
+          <span class="pipe">|</span>
+          18m ago
+        </div>
+      </div>
+    </div>
+    <div class="incident-row high">
+      <div class="sev"></div>
+      <div class="incident-body">
+        <div class="incident-title">Latency regression — P95 4.2x baseline (28.4s vs 6.7s)</div>
+        <div class="incident-meta">
+          <span style="color: #ff8c5e; font-weight: 500;">HIGH</span>
+          <span class="pipe">|</span>
+          agt_data_analyst
+          <span class="pipe">|</span>
+          latency-regression
+          <span class="pipe">|</span>
+          22m ago
+        </div>
+      </div>
+    </div>
+    <div class="incident-row medium">
+      <div class="sev"></div>
+      <div class="incident-body">
+        <div class="incident-title">SLA breach — success rate 91.8% below 95% threshold</div>
+        <div class="incident-meta">
+          <span style="color: var(--warn); font-weight: 500;">MEDIUM</span>
+          <span class="pipe">|</span>
+          agt_code_review
+          <span class="pipe">|</span>
+          sla-evaluator
+          <span class="pipe">|</span>
+          1h ago
+        </div>
+      </div>
+    </div>
+    <div class="incident-row medium">
+      <div class="sev"></div>
+      <div class="incident-body">
+        <div class="incident-title">SLA breach — P95 latency 9.1s exceeds 8s</div>
+        <div class="incident-meta">
+          <span style="color: var(--warn); font-weight: 500;">MEDIUM</span>
+          <span class="pipe">|</span>
+          agt_oncall_summary
+          <span class="pipe">|</span>
+          sla-evaluator
+          <span class="pipe">|</span>
+          1h 30m ago
+        </div>
+      </div>
+    </div>
+
+    <h2 style="margin-top: 22px;">Top Spenders <span class="count">monthly budget</span></h2>
+    <div class="spend-row">
+      <div class="agent">data-analyst<small>$1,284 / $400 budget</small></div>
+      <div class="pct-bar">
+        <div class="track"><div class="fill" style="width:100%; background: var(--danger);"></div></div>
+        <span class="pct" style="color: var(--danger);">321%</span>
+      </div>
+    </div>
+    <div class="spend-row">
+      <div class="agent">research-agent<small>$1,448 / $2,000 budget</small></div>
+      <div class="pct-bar">
+        <div class="track"><div class="fill" style="width:72%; background: var(--ok);"></div></div>
+        <span class="pct" style="color: var(--ok);">72%</span>
+      </div>
+    </div>
+    <div class="spend-row">
+      <div class="agent">sales-outreach<small>$1,103 / $1,500 budget</small></div>
+      <div class="pct-bar">
+        <div class="track"><div class="fill" style="width:73%; background: var(--ok);"></div></div>
+        <span class="pct" style="color: var(--ok);">73%</span>
+      </div>
+    </div>
+    <div class="spend-row">
+      <div class="agent">code-review<small>$581 / $600 budget</small></div>
+      <div class="pct-bar">
+        <div class="track"><div class="fill" style="width:97%; background: var(--warn);"></div></div>
+        <span class="pct" style="color: var(--warn);">97%</span>
+      </div>
+    </div>
+    <div class="spend-row">
+      <div class="agent">support-triage<small>$412 / $800 budget</small></div>
+      <div class="pct-bar">
+        <div class="track"><div class="fill" style="width:52%; background: var(--ok);"></div></div>
+        <span class="pct" style="color: var(--ok);">52%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer-row">
+  <span>agentobserve · GET /api/dashboard/summary</span>
+  <span>generated 2026-05-07T04:42:18Z · next refresh 30s</span>
+</div>
+
+</body>
+</html>
