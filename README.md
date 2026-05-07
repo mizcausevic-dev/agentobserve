@@ -1,5 +1,10 @@
 # AgentObserve
 
+[![CI](https://github.com/mizcausevic-dev/agentobserve/actions/workflows/ci.yml/badge.svg)](https://github.com/mizcausevic-dev/agentobserve/actions/workflows/ci.yml)
+[![Node](https://img.shields.io/badge/node-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/typescript-5.6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![License: MIT](https://img.shields.io/badge/license-MIT-66FCF1)](LICENSE)
+
 Operations console for AI agent fleets — runs, traces, cost budgets, regression detection, SLA scoring, and incident routing. Built for Directors of Platform managing agents in production, not researchers debugging prompts.
 
 > **Recruiter takeaway:**
