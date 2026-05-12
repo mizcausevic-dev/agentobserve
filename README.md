@@ -232,3 +232,7 @@ Visit:
 - [Sister project — mcp-sentinel](https://github.com/mizcausevic-dev/mcp-sentinel)
 
 Part of [mizcausevic-dev's GitHub portfolio](https://github.com/mizcausevic-dev) — demonstrating enterprise platform observability, AI governance, and director-shaped runtime engineering applied to the production AI agent surface.
+
+---
+
+**Connect:** [LinkedIn](https://www.linkedin.com/in/mirzacausevic/) · [Kinetic Gain](https://kineticgain.com) · [Medium](https://medium.com/@mizcausevic/) · [Skills](https://mizcausevic.com/skills/)
