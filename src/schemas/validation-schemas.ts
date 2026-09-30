@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 export const SpanSchema = z.object({
-  spanId: z.string().min(1),
+  spanId: z.string().min(1).max(128),
   parentSpanId: z.string().optional(),
   kind: z.enum(['llm', 'tool', 'guardrail', 'retrieval', 'router']),
-  name: z.string().min(1),
+  name: z.string().min(1).max(128),
   model: z.string().optional(),
   inputTokens: z.number().min(0).optional().default(0),
   outputTokens: z.number().min(0).optional().default(0),
@@ -15,17 +15,19 @@ export const SpanSchema = z.object({
 });
 
 export const RunIngestSchema = z.object({
-  agentId: z.string().min(1),
-  runId: z.string().min(1),
+  agentId: z.string().min(1).max(128),
+  runId: z.string().min(1).max(128),
   sessionId: z.string().optional(),
-  caller: z.string().min(1),
+  caller: z.string().min(1).max(128),
   environment: z.enum(['production', 'staging', 'development']),
-  startedAt: z.string(),
-  endedAt: z.string().optional(),
-  spans: z.array(SpanSchema).min(1),
+  startedAt: z.string().datetime({ offset: true }),
+  endedAt: z.string().datetime({ offset: true }).optional(),
+  spans: z.array(SpanSchema).min(1).max(500),
   outputPreview: z.string().max(8000).optional().default(''),
   outputLengthChars: z.number().min(0).optional().default(0),
 });
+
+export type RunIngest = z.infer<typeof RunIngestSchema>;
 
 export const RegressionEvaluationSchema = z.object({
   agentId: z.string().min(1),

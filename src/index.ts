@@ -1,8 +1,9 @@
+import './config/demo-only';
 import express from 'express';
 import helmet from 'helmet';
-import cors from 'cors';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
+import path from 'node:path';
 import { env } from './config/env';
 import { agentsRouter, runsRouter, incidentsRouter, dashboardRouter } from './routes/agents';
 import { ingestRouter, evaluateRouter } from './routes/evaluate';
@@ -12,7 +13,6 @@ export const app = express();
 const startedAt = Date.now();
 
 app.use(helmet());
-app.use(cors());
 app.use(express.json({ limit: '4mb' }));
 app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
 
@@ -33,14 +33,19 @@ app.use('/api/incidents', incidentsRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/ingest', ingestRouter);
 app.use('/api/evaluate', evaluateRouter);
+if (env.nodeEnv !== 'production') app.use('/demo', express.static(path.join(__dirname, '..', 'dashboard-preview')));
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'not-found' });
 });
 
 if (require.main === module) {
-  app.listen(env.port, () => {
-    console.log(`[agentobserve] listening on http://localhost:${env.port}`);
-    console.log(`[agentobserve] swagger docs at http://localhost:${env.port}/docs`);
-  });
+  if (env.nodeEnv === 'production') {
+    console.error('[agentobserve] production start disabled: this fixture API has no authentication or persistence.');
+    process.exitCode = 1;
+  } else {
+    app.listen(env.port, '127.0.0.1', () => {
+      console.log(`[agentobserve] demo listening on http://127.0.0.1:${env.port}`);
+    });
+  }
 }

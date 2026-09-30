@@ -70,13 +70,13 @@ export function evaluateCostAnomaly(payload: CostAnomalyEvaluationPayload): Cost
 
   if (multiplier >= env.costAnomalyThreshold || budgetPct >= env.costBudgetBlockPct) {
     status = 'blocked';
-    recommendedNextAction = 'Block further runs for this agent until owner approves budget increase or root-cause is fixed.';
+    recommendedNextAction = 'Recommend pausing further runs until the owner reviews budget and root cause.';
   } else if (multiplier >= 1.5 || budgetPct >= env.costBudgetWarnPct) {
     status = 'flagged';
     recommendedNextAction = 'Notify agent owner; review prompt and tool usage for regression.';
   } else {
     status = 'allowed';
-    recommendedNextAction = 'Allow run; continue routine cost tracking.';
+    recommendedNextAction = 'No cost anomaly in this fixture; continue review.';
   }
 
   return {
