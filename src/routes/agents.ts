@@ -1,3 +1,4 @@
+import '../config/demo-only';
 import { Router } from 'express';
 import { agents, findAgent } from '../data/agents';
 import { runs, incidents, baselines } from '../data/runs';

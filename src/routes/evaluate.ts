@@ -1,3 +1,4 @@
+import '../config/demo-only';
 import { Router } from 'express';
 import {
   RunIngestSchema,

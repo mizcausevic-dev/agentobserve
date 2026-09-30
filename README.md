@@ -27,7 +27,7 @@ AgentObserve demonstrates calculations a platform operator could use to review a
 
 The API validates a submitted run and returns a summary, but does not store or evaluate that submission. Evaluation routes operate on seeded agent, run, baseline, and incident fixtures. The local `/demo/runtime.html` page reads the running API, so its screenshot can be reproduced without implying hosted telemetry.
 
-**Release boundary:** this is a local demo. It binds to `127.0.0.1`; `NODE_ENV=production` refuses to start because authentication, tenant isolation, retention, and persistence are absent. Do not send real run contents or personal data to it.
+**Release boundary:** this is a local demo. It binds to `127.0.0.1`; `NODE_ENV=production` rejects startup and imports of the app or route modules because authentication, tenant isolation, retention, and persistence are absent. Do not send real run contents or personal data to it.
 
 ## Architecture
 
