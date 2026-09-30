@@ -9,6 +9,7 @@ import { evaluateCostAnomaly } from '../governance/cost-anomaly';
 import { evaluateRunRegression } from '../governance/regression-detector';
 import { evaluateSla } from '../governance/sla-evaluator';
 import { auditRun } from '../governance/run-audit';
+import { summarizeValidatedRun } from '../governance/ingest-summary';
 
 export const ingestRouter = Router();
 ingestRouter.post('/run', (req, res) => {
@@ -16,17 +17,7 @@ ingestRouter.post('/run', (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: 'invalid-payload', issues: parsed.error.issues });
   }
-  // In a real system this would persist; here we acknowledge and run quick checks
-  const totalCost = parsed.data.spans.reduce((acc, s) => acc + (s.costUsd ?? 0), 0);
-  const totalLatency = parsed.data.spans.reduce((acc, s) => acc + s.latencyMs, 0);
-  return res.status(201).json({
-    accepted: true,
-    runId: parsed.data.runId,
-    agentId: parsed.data.agentId,
-    spanCount: parsed.data.spans.length,
-    totalCostUsd: Math.round(totalCost * 10000) / 10000,
-    totalLatencyMs: totalLatency,
-  });
+  return res.status(201).json(summarizeValidatedRun(parsed.data));
 });
 
 export const evaluateRouter = Router();

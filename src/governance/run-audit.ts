@@ -5,7 +5,7 @@ import { evaluateCostAnomaly } from './cost-anomaly';
 export interface RunAuditResult {
   runId: string;
   agentId: string;
-  combinedStatus: 'production-ready' | 'needs-review' | 'blocked';
+  combinedStatus: 'no-findings' | 'needs-review' | 'blocked';
   postureScore: number;
   regression: ReturnType<typeof evaluateRunRegression>;
   cost: ReturnType<typeof evaluateCostAnomaly>;
@@ -23,9 +23,9 @@ export function auditRun(runId: string): RunAuditResult | null {
   const issues = [...regression.issues, ...cost.issues];
   const score = Math.round((regression.postureScore + (cost.status === 'allowed' ? 100 : cost.status === 'flagged' ? 60 : 30)) / 2);
 
-  let combinedStatus: 'production-ready' | 'needs-review' | 'blocked';
+  let combinedStatus: 'no-findings' | 'needs-review' | 'blocked';
   if (regression.status === 'allowed' && cost.status === 'allowed') {
-    combinedStatus = 'production-ready';
+    combinedStatus = 'no-findings';
   } else if (regression.status === 'blocked' || cost.status === 'blocked') {
     combinedStatus = 'blocked';
   } else {
@@ -33,12 +33,12 @@ export function auditRun(runId: string): RunAuditResult | null {
   }
 
   let recommendedNextAction: string;
-  if (combinedStatus === 'production-ready') {
-    recommendedNextAction = 'No action required; healthy run.';
+  if (combinedStatus === 'no-findings') {
+    recommendedNextAction = 'No anomaly in this fixture run; review other controls before use.';
   } else if (combinedStatus === 'needs-review') {
     recommendedNextAction = 'Notify agent owner; sample additional runs in next window.';
   } else {
-    recommendedNextAction = 'Block agent traffic, escalate to platform on-call, root-cause regression.';
+    recommendedNextAction = 'Do not promote this fixture run; investigate the flagged regression and cost signals.';
   }
 
   return {
